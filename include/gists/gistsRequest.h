@@ -4,6 +4,9 @@
 namespace webfs {
 namespace gists{
 	bool create(Node *node);
+	bool download(Node *node);
+	bool remove(Node *node);
+	bool update(Node *node);
 }
 }
 

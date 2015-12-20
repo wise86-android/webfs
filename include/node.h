@@ -2,6 +2,9 @@
  * \file node.h
  * \brief Definition of Node, NodeType and Node traversing functions
  */
+#ifndef WEBFS_NODE_H_
+#define WEBFS_NODE_H_
+
 #include <string>
 #include <vector>
 
@@ -11,8 +14,6 @@
 #include "file.h"
 
 
-#ifndef WEBFS_NODE_H_
-#define WEBFS_NODE_H_
 namespace webfs {
 
 /**
@@ -32,19 +33,12 @@ class Node {
 
   explicit Node(const rapidjson::Value &jsonNode);
 
-<<<<<<< HEAD
   /**
    * Add a child to the current Node
    */
    //TODO how we handle the pointer? who have to free it?
    //ad a function create Child and do the allocation inside the class?
   void addChild(Node *child);
-=======
-    /**
-     * Add a child to the current Node
-     */
-    void addChild(Node *child);
->>>>>>> 6b04e8a425fb0eb0c8d2b7d85eb2e8305512190d
 
     /**
      * Find the node at the provided relativePath (relative to the current node)
@@ -119,8 +113,11 @@ class Node {
     return !(*this == other);
   }
 
-
   File *file;
+
+  const std::string& getRemoteId()const{
+  	  return remoteId;
+    }
 
   private:
 

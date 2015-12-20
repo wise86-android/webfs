@@ -12,7 +12,8 @@ static inline Node::Type extractType(const rapidjson::Value &jsonNode){
 }
 
 Node::Node(const rapidjson::Value &jsonNode):name(jsonNode["name"].GetString()),
-		parent(nullptr),type(extractType(jsonNode)){
+		parent(nullptr),type(extractType(jsonNode)),remoteInfos(jsonNode["remoteInfo"]){
+
   using namespace rapidjson;
 
   if(jsonNode.HasMember("children")){

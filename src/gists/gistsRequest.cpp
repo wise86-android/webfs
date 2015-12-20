@@ -13,6 +13,23 @@ static size_t writefunc(void *ptr, size_t size, size_t nmemb, std::string *s){
   return size * nmemb;
 }
 
+class GistsRemoteInfoManager{
+public:
+	GistsRemoteInfoManager(RemoteFileInfo &remoteInfo):info(remoteInfo){}
+
+	//get string return a char pointer, if we return a reference we return a reference
+	//to a temporany?
+	std::string getRemoteId(){
+		return info.getInfo("id").GetString();
+	}
+
+	void setRemoteId(const std::string &id){
+		info.addInfo("id",id);
+	}
+
+	RemoteFileInfo &info;
+};
+
 bool gists::create(Node *node){
 
 	CURL *curl = curl_easy_init();
@@ -22,7 +39,7 @@ bool gists::create(Node *node){
 	struct curl_slist *headers = NULL;
 	headers = curl_slist_append(headers, "cache-control: no-cache");
 	headers = curl_slist_append(headers, "User-Agent: webFS");
-	headers = curl_slist_append(headers, "Authorization: token "TOCKEN);
+	headers = curl_slist_append(headers, "Authorization: token " TOCKEN);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	std::string message("{\"description\": \"\", \"public\": true,"
 			" \"files\": { \""+node->getName()+"\": { \"content\": \"Empty\"}}}");
@@ -39,10 +56,10 @@ bool gists::create(Node *node){
 
 	std::cout<<rensponseData<<std::endl;
 	rapidjson::Document resp;
-	rensponseData+='\0';
+
 	resp.Parse(rensponseData.c_str());
 	if(resp.HasMember("id")){
-		node->setRemoteId(resp["id"].GetString());
+		GistsRemoteInfoManager(node->getRemoteInfo()).setRemoteId(resp["id"].GetString());
 		return true;
 	}
 
@@ -53,13 +70,13 @@ bool gists::download(Node *node){
 	CURL *curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
 	std::string getUrl("https://api.github.com/gists/");
-	getUrl.append(node->getRemoteId());
+	getUrl.append(GistsRemoteInfoManager(node->getRemoteInfo()).getRemoteId());
 	curl_easy_setopt(curl, CURLOPT_URL, getUrl.c_str());
 
 	struct curl_slist *headers = NULL;
 	headers = curl_slist_append(headers, "cache-control: no-cache");
 	headers = curl_slist_append(headers, "User-Agent: webFS");
-	headers = curl_slist_append(headers, "Authorization: token "TOCKEN);
+	headers = curl_slist_append(headers, "Authorization: token " TOCKEN);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
 	std::string rensponseData;
@@ -85,14 +102,15 @@ bool gists::remove(Node *node){
 	CURL *curl = curl_easy_init();
 
 	std::string getUrl("https://api.github.com/gists/");
-	getUrl.append(node->getRemoteId());
+	getUrl.append(GistsRemoteInfoManager(node->getRemoteInfo()).getRemoteId());
+
 	curl_easy_setopt(curl, CURLOPT_URL, getUrl.c_str());
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
 
 	struct curl_slist *headers = NULL;
 	headers = curl_slist_append(headers, "cache-control: no-cache");
 	headers = curl_slist_append(headers, "User-Agent: webFS");
-	headers = curl_slist_append(headers, "Authorization: token "TOCKEN);
+	headers = curl_slist_append(headers, "Authorization: token " TOCKEN);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
 
@@ -109,13 +127,14 @@ bool gists::update(Node *node){
 	CURL *curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
 	std::string getUrl("https://api.github.com/gists/");
-	getUrl.append(node->getRemoteId());
+	getUrl.append(GistsRemoteInfoManager(node->getRemoteInfo()).getRemoteId());
+
 	curl_easy_setopt(curl, CURLOPT_URL, getUrl.c_str());
 
 	struct curl_slist *headers = NULL;
 	headers = curl_slist_append(headers, "cache-control: no-cache");
 	headers = curl_slist_append(headers, "User-Agent: webFS");
-	headers = curl_slist_append(headers, "Authorization: token "TOCKEN);
+	headers = curl_slist_append(headers, "Authorization: token " TOCKEN);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	std::string message("{\"description\": \"edit\", \"public\": true,"
 			" \"files\": { \""+node->getName()+"\": { \"content\": \"Empty2\"}}}");
@@ -132,10 +151,9 @@ bool gists::update(Node *node){
 
 	std::cout<<rensponseData<<std::endl;
 	rapidjson::Document resp;
-	rensponseData+='\0';
+
 	resp.Parse(rensponseData.c_str());
 	if(resp.HasMember("id")){
-		node->setRemoteId(resp["id"].GetString());
 		return true;
 	}
 

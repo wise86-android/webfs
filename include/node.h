@@ -13,8 +13,47 @@
 #include "utils.h"
 #include "file.h"
 
-
 namespace webfs {
+
+class RemoteFileInfo {
+
+public:
+	RemoteFileInfo():mInfos(rapidjson::kObjectType){};
+
+	explicit RemoteFileInfo(const rapidjson::Value &v){
+		mInfos.CopyFrom(v,allocator);
+	};
+
+	template<typename BufferType>
+	void writeTo(rapidjson::Writer<BufferType> &out) const{
+		out.StartObject();
+		const auto & end = mInfos.MemberEnd();
+		for(auto it = mInfos.MemberBegin(); it!=end; ++it){
+			out.String(it->name.GetString());
+			out.String(it->value.GetString());
+		}
+		out.EndObject();
+	}
+
+
+	template<typename T>
+	void addInfo(const std::string &key, T value){
+		mInfos.AddMember(rapidjson::Value(key,allocator).Move(),
+				value,allocator);
+	}
+
+	const rapidjson::Value& getInfo(const std::string &key)const{
+		return mInfos[key];
+	}
+
+private:
+
+	rapidjson::Value mInfos;
+	rapidjson::MemoryPoolAllocator<rapidjson::CrtAllocator> allocator;
+
+};
+
+
 
 /**
  * Main Node Data structure used to store local file metadata for mapping with
@@ -73,8 +112,9 @@ class Node {
 	out.Bool(isLeaf);
 	out.String("name");
 	out.String(name);
-	out.String("id");
-	out.String(remoteId);
+
+	out.String("remoteInfo");
+	remoteInfos.writeTo(out);
 
 	if(!isLeaf){
 	  out.String("children");
@@ -87,9 +127,6 @@ class Node {
 	out.EndObject();
   }//writeTo
 
-  void setRemoteId(const std::string &id){
-	  remoteId=id;
-  }
 
   bool operator==(const Node &other)const {
     bool nodeAreEqual = (name==other.name &&
@@ -113,11 +150,11 @@ class Node {
     return !(*this == other);
   }
 
-  File *file;
+  RemoteFileInfo& getRemoteInfo(){
+	  return remoteInfos;
+  }
 
-  const std::string& getRemoteId()const{
-  	  return remoteId;
-    }
+  File *file;
 
   private:
 
@@ -127,7 +164,7 @@ class Node {
     const Type type;
     std::vector<Node *> children;
 
-    std::string remoteId;
+    RemoteFileInfo remoteInfos;
 }; //Node
 
 
